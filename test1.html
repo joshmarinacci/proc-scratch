@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style type="text/css">
+    canvas {
+        min-width: 80vw;
+    }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas" width='400' height="400"></canvas>
+<script type="module">
+    const can = document.querySelector('#canvas')
+    const c = can.getContext('2d')
+    c.imageSmoothingEnabled = false
+    c.save()
+    c.scale(1,1)
+    const w = 400
+    const h = 400
+    c.fillStyle = 'black'
+    c.fillRect(0,0,w,h)
+    c.fillStyle = 'red'
+    for(let x=0; x<w; x++) {
+        for(let y=0; y<h; y++) {
+            let thresh = Math.sqrt(w*w+h*h)
+            let dist = Math.sqrt(x*x+y*y)
+            const v = Math.random()
+            if(v > dist/thresh) c.fillRect(x,y,1,1)
+        }
+    }
+    c.restore()
+</script>
+
+</body>
+</html>
