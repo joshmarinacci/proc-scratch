@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style type="text/css">
+        canvas {
+            min-width: 80vw;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas" width='400' height="400"></canvas>
+<script type="module">
+    const PI = Math.PI
+    const cos = Math.cos
+    const sin = Math.sin
+    const sign = Math.sign
+    const abs = Math.abs
+    const pow = Math.pow
+
+    const can = document.querySelector('#canvas')
+    const c = can.getContext('2d')
+    c.imageSmoothingEnabled = false
+    c.save()
+    c.scale(1,1)
+    const w = 400
+    const h = 400
+    c.fillStyle = 'black'
+    c.fillRect(0,0,w,h)
+    c.fillStyle = 'red'
+
+    c.translate(w/2,h/2)
+    let n = 2.5, a = 100, b = 100
+
+    c.beginPath()
+    // draw ~ 60 line segments
+    for(let t = 0; t < PI*2; t += .1 ) {
+        let x = pow( abs( cos( t ) ), 2 / n ) * a * sign( cos( t ) )
+        let y = pow( abs( sin( t ) ), 2 / n ) * b * sign( sin( t ) );
+        c.lineTo(x,y)
+    }
+    c.fill()
+    c.restore()
+</script>
+
+</body>
+</html>
