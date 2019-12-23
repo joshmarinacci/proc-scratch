@@ -4,38 +4,40 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <style type="text/css">
-        canvas { border: 1px solid red;}
+        canvas { border: 1px solid red; }
     </style>
 </head>
 <body>
 
-<canvas id="canvas" width='400' height="400"></canvas>
+<canvas id="canvas" width='800' height="800"></canvas>
 
 <script src="node_modules/d3-delaunay/dist/d3-delaunay.js"></script>
 <script type="module">
-    import {circle} from "./utils.js"
+    import {circle, correctScale, Point, range} from "./utils.js"
     import {randRange} from './utils.js'
-    console.log(window)
-
-    const points = []
-    for(let i=0; i<100; i++) {
-        points.push([randRange(0,400),randRange(0,400)])
-    }
-    const delaunay = d3.Delaunay.from(points)
-    const voronoi = delaunay.voronoi([0,0,400,400])
 
 
-    const ctx = document.querySelector('#canvas').getContext('2d')
+    const can = document.querySelector('#canvas')
+    const ctx = can.getContext('2d')
+    correctScale(can,ctx)
+
+    let w = can.clientWidth
+    let h = can.clientHeight
+
+    const points = range(100).map(i => new Point(randRange(0,w),randRange(0,h)))
+    const delaunay = d3.Delaunay.from(points,(pt)=>pt.x, (pt)=>pt.y)
+    const voronoi = delaunay.voronoi([0,0,w,h])
+
+
     ctx.strokeStyle = 'black'
     ctx.beginPath()
     voronoi.render(ctx)
     ctx.stroke()
 
     points.forEach(pt => {
-        console.log(pt)
         ctx.fillStyle = 'red'
         ctx.beginPath()
-        circle(ctx,{x:pt[0],y:pt[1]},5)
+        circle(ctx,pt,5)
         ctx.fill()
     })
 

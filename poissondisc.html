@@ -4,25 +4,21 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <style type="text/css">
-        canvas {
-            min-width: 80vw;
-        }
+
     </style>
 </head>
 <body>
 
 <canvas id="canvas" width='400' height="400"></canvas>
 <script type="module">
-    import {randRange, hsl} from "./utils.js"
+    import {randRange, hsl, correctScale} from "./utils.js"
     const can = document.querySelector('#canvas')
     const c = can.getContext('2d')
-    c.imageSmoothingEnabled = false
-    c.save()
-    c.scale(1,1)
-    can.width = 800
-    can.height = 800
-    const w = 800
-    const h = 800
+
+    correctScale(can,c)
+    let w = can.width
+    let h = can.height
+
     c.fillStyle = 'black'
     c.fillRect(0,0,w,h)
     c.fillStyle = 'red'
