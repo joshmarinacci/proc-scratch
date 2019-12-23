@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style type="text/css">
+        canvas {
+            min-width: 80vw;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas" width='400' height="400"></canvas>
+<script type="module">
+    import {randRange, hsl} from "./utils.js"
+    const can = document.querySelector('#canvas')
+    const c = can.getContext('2d')
+    c.imageSmoothingEnabled = false
+    c.save()
+    c.scale(1,1)
+    can.width = 800
+    can.height = 800
+    const w = 800
+    const h = 800
+    c.fillStyle = 'black'
+    c.fillRect(0,0,w,h)
+    c.fillStyle = 'red'
+
+
+    const randfloat = (max) => Math.random()*max
+    const randint = (max) => Math.floor(randfloat(max))
+
+
+    function poissonSample(radius, k, width, height) {
+        const N = 2
+        let points = []
+        let active = []
+
+        let p0 = {x:randfloat(width),y:randfloat(height)}
+        let grid = []
+        let cellsize = radius/Math.sqrt(N)
+
+        let ncells_width = Math.ceil(width/cellsize) + 1
+        let ncells_height = Math.ceil(height/cellsize) + 1
+
+        for(let i=0; i<ncells_width; i++) {
+            grid[i] = []
+            for(let j=0; j<ncells_height; j++) {
+                grid[i][j] = null
+            }
+        }
+
+        function dist(x1,y1,x2,y2) {
+            let xx = x2-x1
+            let yy = y2-y1
+            return Math.sqrt(xx*xx+yy*yy)
+        }
+
+        function insertPoint(grid,cellsize,point) {
+            let x = Math.floor(point.x/cellsize)
+            let y = Math.floor(point.y/cellsize)
+            grid[x][y] = point
+        }
+
+        function isValidPoint(grid, cellsize, gwidth, gheight, p, radius) {
+            //check grid bounds
+            if(p.x < 0 || p.x >= width || p.y <0 || p.y >= height) return false
+
+            //check neighboring 8 cells
+            let xindex = Math.floor(p.x/cellsize)
+            let yindex = Math.floor(p.y/cellsize)
+            // console.log("xindex",xindex, yindex)
+            let i0 = Math.max(xindex-1,0)
+            let i1 = Math.min(xindex+1,gwidth-1)
+            let j0 = Math.max(yindex-1,0)
+            let j1 = Math.min(yindex+1,gheight-1)
+
+            for(let i=i0; i<=i1; i++) {
+                for(let j=j0; j<=j1; j++) {
+                    if(grid[i][j] !== null) {
+                        if(dist(grid[i][j].x, grid[i][j].y, p.x,p.y) < radius) {
+                            return false
+                        }
+                    }
+                }
+            }
+            // console.log("it is valid")
+            return true
+        }
+
+        insertPoint(grid,cellsize,p0)
+        points.push(p0)
+        active.push(p0)
+
+        while(active.length > 0) {
+            let rindex = randint(active.length)
+            let p = active[rindex]
+            let found = false
+            for(let tries=0; tries<k; tries++) {
+                let theta = randfloat(2*Math.PI)
+                let new_radius = randRange(radius, 2*radius)
+                let pnewx = p.x + new_radius * Math.cos(theta)
+                let pnewy = p.y + new_radius * Math.sin(theta)
+                let pnew = {x:pnewx, y:pnewy}
+
+                if(!isValidPoint(grid,cellsize,ncells_width, ncells_height, pnew, radius)) {
+                    continue;
+                }
+                // console.log("yes!")
+                points.push(pnew)
+                insertPoint(grid, cellsize, pnew)
+                active.push(pnew)
+                found = true
+                break;
+            }
+            if(!found) {
+                active.splice(rindex,1)
+            }
+        }
+        return points
+    }
+
+    let list = poissonSample(40,30, w,h)
+
+    function drawCircle(c, pt, radius) {
+        c.beginPath()
+        c.arc(pt.x,pt.y,radius,0,Math.PI*2)
+        c.fill()
+    }
+
+    list.forEach(pt => {
+        c.fillStyle = hsl(0.1,randRange(0.3,1.0),randRange(0.3,1.0))
+        drawCircle(c,pt,20)
+    })
+
+    c.restore()
+</script>
+
+</body>
+</html>
