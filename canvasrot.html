@@ -3,9 +3,6 @@
     <head>
         <meta charset="utf-8">
         <style type="text/css">
-            body {
-                touch-action: none;
-            }
             canvas {
                 border: 0px solid black;
                 touch-action: none;
@@ -23,9 +20,12 @@
         <button id="right">right</button>
 
         <script type="module">
-            import {Matrix3, Matrix4} from "./node_modules/three/build/three.module.js"
+            import {Matrix3, Matrix4,
+                Vector3,
+                Quaternion
+            } from "./node_modules/three/build/three.module.js"
             const $ = (sel) => document.querySelector(sel)
-            const on = (elem, type, cb) => elem.addEventListener(type,cb)
+            const on = (elem, type, cb) => elem.addEventListener(type,cb,true)
 
             const can = $("#canvas")
             const w = can.width
@@ -43,15 +43,17 @@
             m4.identity()
             const trans = new Matrix4().makeTranslation(150,0,0)
             //const trans = m4.makeTranslation(100,0,0)
-            const rot = new Matrix4().makeRotationZ(Math.PI/4)
+            const rot = new Matrix4().makeRotationZ(Math.PI/16)
 
             const mx = new Matrix4()
             mx.identity()
-            mx.multiply(rot)
+            //mx.multiply(rot)
             //mx.multiply(trans)
 
+            let activeTouches = []
 
 
+            let midpoint = null
             function redraw() {
                 c.fillStyle = '#ccc'
                 c.fillRect(0,0,w,h)
@@ -60,6 +62,18 @@
                 c.transform(e[0],e[1], e[4],e[5], e[12],e[13])
                 c.drawImage(can2,0,0)
                 c.restore()
+
+                Object.keys(activeTouches).forEach(id => {
+                    const t = activeTouches[id]
+                    c.strokeStyle = 'black'
+                    const s = 30
+                    c.strokeRect(t.clientX-s,t.clientY-s,s*2,s*2)
+                })
+                if(midpoint) {
+                    c.strokeStyle = 'black'
+                    const s = 30
+                    c.strokeRect(midpoint.x-s, midpoint.y-s,s*2,s*2)
+                }
             }
             function paintAt(mx) {
                 c2.fillStyle = 'black'
@@ -80,25 +94,134 @@
             redraw()
 
             let penDown = false
+
+            /*
+
+            on start
+                keep current transform
+                reverse start point to base, save
+            on move,
+                calculate new transform
+                apply reverse
+                apply new
+            on end
+                save final transform as current
+
+            */
+
+
+            function getPoint(e) {
+                const rect = e.target.getBoundingClientRect()                
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                }
+            }
+
+            function dump(mx) {
+                const v = new Vector3()
+                const q = new Quaternion()
+                const s = new Vector3()
+                mx.decompose(v,q,s)
+                console.log("pos", v.x,v.y,v.z)
+            }
+
+            let cmx = null
+            let curTrans = null
+            let newTrans = null
+
+            function startTouch(e) {
+                const pt = getPoint(e)
+                let cmx = mx.clone()
+                curTrans = screenToCanvas(pt)
+                curTrans = new Matrix4().getInverse(curTrans)
+                dump(mx)
+                dump(curTrans)
+            }
+
+            function moveTouch(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                //console.log("primary",e.isPrimary,e.pointerId)
+                if(Object.keys(activeTouches).length === 2) {
+                    //console.log("doing a pinch")
+                    const keys = Object.keys(activeTouches)
+                    const p1 = getPoint(activeTouches[keys[0]])
+                    const p2 = getPoint(activeTouches[keys[1]])
+                    //console.log("p1",p1.x, p1.y, p2.x, p2.y)
+                    const midp = {
+                        x:(p1.x+p2.x)/2,
+                        y:(p1.y+p2.y)/2
+                    }
+                    midpoint = midp
+                    const dist = Math.abs(p2.x-p1.x)
+                    mx.identity()
+//                    mx.multiply(curTrans)
+                    if(newTrans) {
+  //                    mx.multiply(newTrans)
+                    }
+                    const scale = dist/100
+                    //mx.multiply(new Matrix4().makeTranslation(midpoint.x,midpoint.y,0))
+                    //mx.multiply(new Matrix4().makeScale(scale,scale,scale))
+                    //mx.multiply(new Matrix4().makeTranslation(-midpoint.x,-midpoint.y,0))
+
+                    //console.log(dist)
+
+                    const theta = Math.atan2(p1.x-p2.x,p1.y-p2.y)
+                    mx.multiply(new Matrix4().makeTranslation(midpoint.x,midpoint.y,0))
+                    mx.multiply(new Matrix4().makeRotationZ(Math.PI-theta))
+                    mx.multiply(new Matrix4().makeScale(scale,scale,scale))
+                    mx.multiply(new Matrix4().makeTranslation(-midpoint.x,-midpoint.y,0))
+                } else {
+                    const pt = getPoint(e)
+                    if(e.isPrimary) {
+                        newTrans = new Matrix4().makeTranslation(pt.x,pt.y,0)
+                        mx.identity()
+                        mx.multiply(curTrans)
+                        mx.multiply(newTrans)
+                    }
+                    redraw()
+                }
+            }
+
+            function endTouch(e) {
+
+            }
+
             can.addEventListener('pointerdown',(e)=>{
-                console.log("penDown", e.pointerType, e.button, e.buttons, e.width, e.isPrimary)
+                //e.preventDefault()
+//                console.log("penDown", e.pointerType, e.button, e.buttons, e.width, e.isPrimary)
                 if(e.pointerType === 'touch') {
-                    console.log("skipping touch")
+                    activeTouches[e.pointerId] = e
+                    startTouch(e)
+                    redraw()
                     return;
                 }
                 penDown = true
             })
             can.addEventListener('pointermove',(e)=>{
+                if(e.pointerType === 'touch') {
+                    activeTouches[e.pointerId] = e
+                    moveTouch(e)
+                    redraw()
+                    return;
+                }
                 if(!penDown) return 
-                e.preventDefault()
+                //e.preventDefault()
                 const rect = e.target.getBoundingClientRect()
                 const pt = {
                     x: e.clientX - rect.left,
                     y: e.clientY - rect.top
                 }
                 paintAt(screenToCanvas(pt))
-            })
+            },false)
             can.addEventListener('pointerup',(e)=>{
+                if(e.pointerType === 'touch') {
+                    delete activeTouches[e.pointerId]
+                    endTouch(e)
+                    redraw();
+                    return
+                }
                 penDown = false
             })
 
