@@ -1,0 +1,70 @@
+<html>
+<body>
+<canvas id="canvas" width=500 height=500></canvas>
+<script type="module">
+    const $ = (sel) => document.querySelector(sel)
+    const on = (elem, type, cb) => elem.addEventListener(type, cb, true)
+
+    const can = $("#canvas")
+    const w = can.width
+    const h = can.height
+    const c = can.getContext('2d')
+
+
+    function getPoint(e) {
+        const rect = e.target.getBoundingClientRect()
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        }
+    }
+
+    function distanceBetween(point1, point2) {
+        return Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
+    }
+
+    function angleBetween(point1, point2) {
+        return Math.atan2(point2.x - point1.x, point2.y - point1.y);
+    }
+
+
+    let radius = 5
+    let gap = radius / 3
+    let penDown = false
+    let lastPoint = null
+    can.addEventListener('pointerdown', (e) => {
+        penDown = true
+        lastPoint = getPoint(e)
+    })
+    can.addEventListener('pointermove', (e) => {
+        if (!penDown) return
+        let currentPoint = getPoint(e)
+        let dist = distanceBetween(lastPoint, currentPoint)
+        var angle = angleBetween(lastPoint, currentPoint);
+
+        let x = 0
+        let y = 0
+        for (var i = 0; i < dist; i += gap) {
+            x = lastPoint.x + (Math.sin(angle) * i);
+            y = lastPoint.y + (Math.cos(angle) * i);
+
+            var radgrad = c.createRadialGradient(x, y, radius / 2, x, y, radius);
+
+            radgrad.addColorStop(0, '#000');
+            radgrad.addColorStop(0.5, 'rgba(0,0,0,0.5)');
+            radgrad.addColorStop(1, 'rgba(0,0,0,0)');
+
+            c.fillStyle = radgrad;
+            c.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+        }
+        lastPoint = currentPoint
+
+    }, false)
+    can.addEventListener('pointerup', (e) => {
+        penDown = false
+    })
+
+
+</script>
+</body>
+</html>

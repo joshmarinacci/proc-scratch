@@ -75,12 +75,27 @@
                     c.strokeRect(midpoint.x-s, midpoint.y-s,s*2,s*2)
                 }
             }
+
+            function distanceBetween(point1, point2) {
+                return Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
+            }
+            function angleBetween(point1, point2) {
+                return Math.atan2( point2.x - point1.x, point2.y - point1.y );
+            }
+            
+            let lastPoint = null
+
             function paintAt(mx) {
                 c2.fillStyle = 'black'
                 c2.save()
                 const e = mx.elements
                 c2.transform(e[0],e[1], e[4],e[5], e[12],e[13])
-                c2.fillRect(0,0,3,3)
+                c2.lineTo(0,0,3,3)
+                c2.lineWidth = 5
+                c2.lineJoin = "round"
+                c2.lineCap = "round"
+                //c2.fillRect(0,0,3,3)
+                c2.stroke()
                 c2.restore()
                 redraw()
             }
@@ -108,7 +123,6 @@
                 save final transform as current
 
             */
-
 
             function getPoint(e) {
                 const rect = e.target.getBoundingClientRect()                
@@ -148,7 +162,6 @@
                     const keys = Object.keys(activeTouches)
                     const p1 = getPoint(activeTouches[keys[0]])
                     const p2 = getPoint(activeTouches[keys[1]])
-                    //console.log("p1",p1.x, p1.y, p2.x, p2.y)
                     const midp = {
                         x:(p1.x+p2.x)/2,
                         y:(p1.y+p2.y)/2
@@ -156,22 +169,13 @@
                     midpoint = midp
                     const dist = Math.abs(p2.x-p1.x)
                     mx.identity()
-//                    mx.multiply(curTrans)
-                    if(newTrans) {
-  //                    mx.multiply(newTrans)
-                    }
                     const scale = dist/100
-                    //mx.multiply(new Matrix4().makeTranslation(midpoint.x,midpoint.y,0))
-                    //mx.multiply(new Matrix4().makeScale(scale,scale,scale))
-                    //mx.multiply(new Matrix4().makeTranslation(-midpoint.x,-midpoint.y,0))
-
-                    //console.log(dist)
-
                     const theta = Math.atan2(p1.x-p2.x,p1.y-p2.y)
                     mx.multiply(new Matrix4().makeTranslation(midpoint.x,midpoint.y,0))
                     mx.multiply(new Matrix4().makeRotationZ(Math.PI-theta))
                     mx.multiply(new Matrix4().makeScale(scale,scale,scale))
                     mx.multiply(new Matrix4().makeTranslation(-midpoint.x,-midpoint.y,0))
+                    //if(newTrans) mx.multiply(newTrans)
                 } else {
                     const pt = getPoint(e)
                     if(e.isPrimary) {
@@ -188,9 +192,12 @@
 
             }
 
-            can.addEventListener('pointerdown',(e)=>{
+            function doPainting(e) {
                 //e.preventDefault()
-//                console.log("penDown", e.pointerType, e.button, e.buttons, e.width, e.isPrimary)
+                const pt = getPoint(e)
+                paintAt(screenToCanvas(pt))
+            }
+            can.addEventListener('pointerdown',(e)=>{
                 if(e.pointerType === 'touch') {
                     activeTouches[e.pointerId] = e
                     startTouch(e)
@@ -207,13 +214,7 @@
                     return;
                 }
                 if(!penDown) return 
-                //e.preventDefault()
-                const rect = e.target.getBoundingClientRect()
-                const pt = {
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top
-                }
-                paintAt(screenToCanvas(pt))
+                doPainting(e)
             },false)
             can.addEventListener('pointerup',(e)=>{
                 if(e.pointerType === 'touch') {
