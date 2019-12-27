@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <style type="text/css">
+            canvas {
+                border: 0px solid black;
+                touch-action: none;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas" width="500" height="500"></canvas>
+        <script type="module">
+            import {Matrix3, Matrix4} from "./node_modules/three/build/three.module.js"
+            const $ = (sel) => document.querySelector(sel)
+
+            const can = $("#canvas")
+            const w = can.width
+            const h = can.height
+            const c = can.getContext('2d')
+
+            const can2 = document.createElement('canvas')
+            can2.width = 300
+            can2.height = 300
+            const c2 = can2.getContext('2d')
+            c2.fillStyle = 'red'
+            c2.fillRect(0,0,300,300)
+
+            const m4 = new Matrix4()
+            m4.identity()
+            const trans = new Matrix4().makeTranslation(150,0,0)
+            //const trans = m4.makeTranslation(100,0,0)
+            const rot = new Matrix4().makeRotationZ(Math.PI/4)
+
+            const mx = new Matrix4()
+            mx.identity()
+            mx.multiply(rot)
+            mx.multiply(trans)
+
+
+
+            function redraw() {
+                c.fillStyle = '#ccc'
+                c.fillRect(0,0,w,h)
+                c.save()
+                const e = mx.elements
+                c.transform(e[0],e[1], e[4],e[5], e[12],e[13])
+                c.drawImage(can2,0,0)
+                c.restore()
+            }
+            function paintAt(mx) {
+                c2.fillStyle = 'black'
+                c2.save()
+                const e = mx.elements
+                c2.transform(e[0],e[1], e[4],e[5], e[12],e[13])
+                c2.fillRect(0,0,3,3)
+                c2.restore()
+                redraw()
+            }
+            function screenToCanvas(pt) {
+                const mi = new Matrix4().getInverse(mx)
+                const mp = new Matrix4().makeTranslation(pt.x,pt.y,0)
+                mi.multiply(mp)
+                return mi
+            }
+
+            redraw()
+
+            let down = false
+            can.addEventListener('pointerdown',(e)=>{
+                console.log("down", e.pointerType, e.button, e.buttons, e.width, e.isPrimary)
+                down = true
+            })
+            can.addEventListener('pointermove',(e)=>{
+                if(!down) return 
+                const rect = e.target.getBoundingClientRect()
+                const pt = {
+                    x: e.clientX - rect.x,
+                    y: e.clientY - rect.y
+                }
+                paintAt(screenToCanvas(pt))
+            })
+            can.addEventListener('pointerup',(e)=>{
+                down = false
+                console.log("up")
+            })
+
+            console.log("max touch points", navigator.maxTouchPoints)
+        </script>
+    </body>
+</html>
