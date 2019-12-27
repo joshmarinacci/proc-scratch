@@ -11,9 +11,17 @@
     </head>
     <body>
         <canvas id="canvas" width="500" height="500"></canvas>
+        <button id="cw">cw</button>
+        <button id="ccw">ccw</button>
+        <button id="up">up</button>
+        <button id="down">down</button>
+        <button id="left">left</button>
+        <button id="right">right</button>
+
         <script type="module">
             import {Matrix3, Matrix4} from "./node_modules/three/build/three.module.js"
             const $ = (sel) => document.querySelector(sel)
+            const on = (elem, type, cb) => elem.addEventListener(type,cb)
 
             const can = $("#canvas")
             const w = can.width
@@ -36,7 +44,7 @@
             const mx = new Matrix4()
             mx.identity()
             mx.multiply(rot)
-            mx.multiply(trans)
+            //mx.multiply(trans)
 
 
 
@@ -87,6 +95,37 @@
             })
 
             console.log("max touch points", navigator.maxTouchPoints)
+
+            on($("#cw"),'click',()=>{
+                const rot = new Matrix4().makeRotationZ(Math.PI/16)
+                mx.multiply(rot)
+                redraw()
+            })
+            on($("#ccw"),'click',()=>{
+                const rot = new Matrix4().makeRotationZ(-Math.PI/16)
+                mx.multiply(rot)
+                redraw()
+            })
+            on($("#up"),'click',()=>{
+                const trans = new Matrix4().makeTranslation(0,-10,0)
+                mx.multiply(trans)
+                redraw()
+            })
+            on($("#down"),'click',()=>{
+                const trans = new Matrix4().makeTranslation(0,10,0)
+                mx.multiply(trans)
+                redraw()
+            })
+            on($("#left"),'click',()=>{
+                const trans = new Matrix4().makeTranslation(-20,0,0)
+                mx.multiply(trans)
+                redraw()
+            })
+            on($("#right"),'click',()=>{
+                const trans = new Matrix4().makeTranslation(20,0,0)
+                mx.multiply(trans)
+                redraw()
+            })
         </script>
     </body>
 </html>
