@@ -18,6 +18,6 @@
   "homepage": "https://github.com/joshmarinacci/proc-scratch#readme",
   "dependencies": {
     "d3-delaunay": "^5.1.6",
-    "three": "^0.112.1"
+    "three": "^0.137.0"
   }
 }
